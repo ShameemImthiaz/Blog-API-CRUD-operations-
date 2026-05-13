@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Blog App</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f4f4;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .form {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px 5px 5px 0;
+            border: none;
+            cursor: pointer;
+            background: #333;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .post {
+            background: white;
+            margin-top: 10px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .actions button {
+            background: #555;
+        }
+
+        .delete {
+            background: red;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📝 Blog App</h1>
+
+<div class="form">
+    <input type="hidden" id="postId">
+    <input type="text" id="title" placeholder="Enter title">
+    <textarea id="content" placeholder="Enter content"></textarea>
+
+    <button onclick="savePost()">Save Post</button>
+    <button onclick="clearForm()">Clear</button>
+</div>
+
+<h2>All Posts</h2>
+<div id="posts"></div>
+
+<script>
+const API_URL = "/posts"; // if using Flask templates
+// const API_URL = "http://127.0.0.1:5000/posts"; // if opening file directly
+
+window.onload = fetchPosts;
+
+// Fetch posts
+async function fetchPosts() {
+    const res = await fetch(API_URL);
+    const posts = await res.json();
+
+    const container = document.getElementById("posts");
+    container.innerHTML = "";
+
+    posts.forEach(post => {
+        container.innerHTML += `
+            <div class="post">
+                <h3>${post.title}</h3>
+                <p>${post.content}</p>
+                <small>ID: ${post.id}</small>
+                <div class="actions">
+                    <button onclick="editPost(${post.id}, \`${post.title}\`, \`${post.content}\`)">Edit</button>
+                    <button class="delete" onclick="deletePost(${post.id})">Delete</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// Create / Update
+async function savePost() {
+    const id = document.getElementById("postId").value;
+    const title = document.getElementById("title").value;
+    const content = document.getElementById("content").value;
+
+    if (!title || !content) {
+        alert("Enter title and content");
+        return;
+    }
+
+    if (id) {
+        // UPDATE
+        await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, content })
+        });
+    } else {
+        // CREATE
+        await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, content })
+        });
+    }
+
+    clearForm();
+    fetchPosts();
+}
+
+// Delete
+async function deletePost(id) {
+    await fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+    });
+    fetchPosts();
+}
+
+// Edit
+function editPost(id, title, content) {
+    document.getElementById("postId").value = id;
+    document.getElementById("title").value = title;
+    document.getElementById("content").value = content;
+}
+
+// Clear form
+function clearForm() {
+    document.getElementById("postId").value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("content").value = "";
+}
+</script>
+
+</body>
+</html>
